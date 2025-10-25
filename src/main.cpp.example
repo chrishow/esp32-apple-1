@@ -1,0 +1,56 @@
+#include <TFT_eSPI.h>
+#include <SPI.h>
+
+// Initialize display
+TFT_eSPI tft = TFT_eSPI();
+
+void setup()
+{
+    Serial.begin(115200);
+    Serial.println("TTGO T-Display 1.14 inch Test");
+
+    // Initialize the display
+    tft.init();
+    tft.setRotation(1); // Landscape orientation (240x135)
+    tft.fillScreen(TFT_BLACK);
+
+    // Turn on backlight
+    pinMode(4, OUTPUT);
+    digitalWrite(4, HIGH);
+
+    // Display welcome message
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setTextSize(2);
+    tft.setCursor(5, 5);
+    tft.println("TTGO T-Display");
+    tft.setCursor(5, 25);
+    tft.println("1.14 inch");
+
+    // Draw some graphics - adjusted for 240x135 screen
+    tft.drawRect(5, 50, 230, 40, TFT_RED);
+    tft.fillCircle(40, 70, 15, TFT_GREEN);
+    tft.fillCircle(200, 70, 15, TFT_BLUE);
+
+    Serial.println("Display initialized successfully!");
+    Serial.println("Screen size: 240x135 pixels");
+}
+
+void loop()
+{
+    static int counter = 0;
+
+    // Clear the counter area first (positioned for 240x135 screen)
+    tft.fillRect(5, 100, 230, 30, TFT_BLACK);
+
+    // Update counter display
+    tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+    tft.setTextSize(2); // Smaller size to fit better
+    tft.setCursor(5, 105);
+    tft.printf("Counter: %d", counter);
+
+    // Print to serial as well
+    Serial.printf("Counter: %d\n", counter);
+
+    counter++;
+    delay(1000);
+}

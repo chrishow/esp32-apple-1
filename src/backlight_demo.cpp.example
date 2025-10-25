@@ -1,0 +1,175 @@
+#include <TFT_eSPI.h>
+#include <SPI.h>
+
+TFT_eSPI tft = TFT_eSPI();
+
+// Backlight control
+#define TFT_BL 4
+#define PWM_CHANNEL 0
+#define PWM_FREQ 5000
+#define PWM_RESOLUTION 8
+
+// Button definitions for interactive control
+#define BUTTON_1 35
+#define BUTTON_2 0
+
+int brightness = 128; // 0-255 range
+bool button1Pressed = false;
+bool button2Pressed = false;
+
+void setBrightness(int value)
+{
+    // Ensure value is within range
+    value = constrain(value, 0, 255);
+    ledcWrite(PWM_CHANNEL, value);
+}
+
+void updateDisplay()
+{
+    tft.fillScreen(TFT_BLACK);
+
+    tft.setTextColor(TFT_CYAN, TFT_BLACK);
+    tft.setTextFont(2);
+    tft.setCursor(5, 5);
+    tft.println("Backlight Control");
+
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.setCursor(5, 30);
+    tft.printf("Brightness: %d/255", brightness);
+
+    // Visual brightness bar
+    int barWidth = map(brightness, 0, 255, 0, 200);
+    tft.drawRect(5, 50, 202, 20, TFT_WHITE);
+    tft.fillRect(6, 51, barWidth, 18, TFT_GREEN);
+
+    // Percentage
+    int percentage = map(brightness, 0, 255, 0, 100);
+    tft.setCursor(5, 80);
+    tft.printf("Percentage: %d%%", percentage);
+
+    // Instructions
+    tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+    tft.setTextFont(1);
+    tft.setCursor(5, 100);
+    tft.println("BTN1: Brighter  BTN2: Dimmer");
+
+    // Color squares to show brightness effect
+    tft.fillRect(5, 115, 15, 15, TFT_RED);
+    tft.fillRect(25, 115, 15, 15, TFT_GREEN);
+    tft.fillRect(45, 115, 15, 15, TFT_BLUE);
+    tft.fillRect(65, 115, 15, 15, TFT_YELLOW);
+    tft.fillRect(85, 115, 15, 15, TFT_MAGENTA);
+    tft.fillRect(105, 115, 15, 15, TFT_CYAN);
+}
+
+void handleButtons()
+{
+    // Button 1 - Increase brightness
+    if (digitalRead(BUTTON_1) == LOW && !button1Pressed)
+    {
+        button1Pressed = true;
+        brightness = min(255, brightness + 25);
+        setBrightness(brightness);
+        updateDisplay();
+        Serial.printf("Brightness increased to: %d\n", brightness);
+        delay(200); // Debounce
+    }
+
+    // Button 2 - Decrease brightness
+    if (digitalRead(BUTTON_2) == LOW && !button2Pressed)
+    {
+        button2Pressed = true;
+        brightness = max(0, brightness - 25);
+        setBrightness(brightness);
+        updateDisplay();
+        Serial.printf("Brightness decreased to: %d\n", brightness);
+        delay(200); // Debounce
+    }
+
+    // Reset button states when released
+    if (digitalRead(BUTTON_1) == HIGH)
+    {
+        button1Pressed = false;
+    }
+    if (digitalRead(BUTTON_2) == HIGH)
+    {
+        button2Pressed = false;
+    }
+}
+
+void autoBrightnessDemo()
+{
+    // Auto-adjusting brightness based on time
+    static unsigned long lastUpdate = 0;
+    if (millis() - lastUpdate > 100)
+    {
+        // Simulate ambient light sensor
+        int timeBasedBrightness = 128 + 127 * sin(millis() * 0.001);
+        setBrightness(timeBasedBrightness);
+        brightness = timeBasedBrightness;
+
+        // Update display occasionally
+        if ((millis() / 1000) % 2 == 0)
+        {
+            updateDisplay();
+        }
+
+        lastUpdate = millis();
+    }
+}
+
+void breathingEffect()
+{
+    // Smooth breathing effect
+    static unsigned long lastUpdate = 0;
+    if (millis() - lastUpdate > 50)
+    {
+        float breatheValue = sin(millis() * 0.003) * 0.5 + 0.5; // 0.0 to 1.0
+        int breatheBrightness = 50 + (breatheValue * 200);      // 50 to 250
+        setBrightness(breatheBrightness);
+        brightness = breatheBrightness;
+
+        lastUpdate = millis();
+    }
+}
+
+void setup()
+{
+    Serial.begin(115200);
+    Serial.println("TTGO T-Display Backlight Control Demo");
+
+    // Initialize display
+    tft.init();
+    tft.setRotation(1);
+    tft.fillScreen(TFT_BLACK);
+
+    // Setup PWM for backlight control
+    ledcSetup(PWM_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
+    ledcAttachPin(TFT_BL, PWM_CHANNEL);
+    ledcWrite(PWM_CHANNEL, brightness);
+
+    // Initialize buttons
+    pinMode(BUTTON_1, INPUT);
+    pinMode(BUTTON_2, INPUT);
+
+    // Display initial interface
+    updateDisplay();
+
+    Serial.println("Backlight control ready!");
+    Serial.println("Button 1: Increase brightness");
+    Serial.println("Button 2: Decrease brightness");
+}
+
+void loop()
+{
+    // Handle button input for brightness control
+    handleButtons();
+
+    // Auto brightness demo (uncomment to enable)
+    // autoBrightnessDemo();
+
+    // Breathing effect demo (uncomment to enable)
+    breathingEffect();
+
+    delay(50);
+}
