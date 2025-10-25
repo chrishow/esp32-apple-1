@@ -98,20 +98,33 @@ void calculateFuelConsumption()
         // Calculate fuel rate (L/h)
         float fuelRate = (currentMAF * 3600.0) / (DIESEL_AFR * DIESEL_DENSITY);
 
-        // Calculate instant consumption (L/100km)
-        fuelData.instantConsumption = (fuelRate * 100.0) / currentSpeed;
+        // Calculate instant consumption (L/100km) - handle idling case
+        if (currentSpeed > 0.1)
+        { // Moving (above 0.1 km/h to avoid floating point issues)
+            fuelData.instantConsumption = (fuelRate * 100.0) / currentSpeed;
+        }
+        else
+        {                                       // Idling - show fuel rate instead of consumption per distance
+            fuelData.instantConsumption = -2.0; // Special value to indicate idling
+        }
 
         // Update trip totals if we have valid time data
         unsigned long currentTime = millis();
         if (fuelData.lastUpdateTime > 0)
         {
             float timeHours = (currentTime - fuelData.lastUpdateTime) / 3600000.0; // Convert ms to hours
-            float distanceKm = (currentSpeed * timeHours);                         // Distance in this interval
 
+            // Always add fuel consumed (even when idling)
             fuelData.totalFuelUsed += (fuelRate * timeHours);
-            fuelData.totalDistance += distanceKm;
 
-            // Calculate average consumption
+            // Only add distance if actually moving
+            if (currentSpeed > 0.1)
+            {
+                float distanceKm = (currentSpeed * timeHours);
+                fuelData.totalDistance += distanceKm;
+            }
+
+            // Calculate average consumption (only if we've traveled some distance)
             if (fuelData.totalDistance > 0.01)
             { // Avoid division by zero
                 fuelData.averageConsumption = (fuelData.totalFuelUsed * 100.0) / fuelData.totalDistance;
@@ -156,6 +169,13 @@ void updateDisplay()
     {
         tft.print(fuelData.instantConsumption, 1);
         tft.println("L/100km");
+    }
+    else if (fuelData.instantConsumption == -2.0 && currentMAF > 0)
+    {
+        // Idling - show fuel rate instead
+        float fuelRate = (currentMAF * 3600.0) / (14.5 * 832.0);
+        tft.print(fuelRate, 2);
+        tft.println("L/h");
     }
     else
     {
