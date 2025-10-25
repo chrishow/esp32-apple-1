@@ -316,7 +316,6 @@ void loop()
             Serial.print("Failed to read coolant temperature: ");
             Serial.println(tempResponse);
         }
-        delay(1000);
 
         // --- Read Mass Air Flow (ODBII PID 0110) ---
         String mafResponse = sendObdCommand("0110");
@@ -338,7 +337,6 @@ void loop()
             Serial.print("Failed to read MAF: ");
             Serial.println(mafResponse);
         }
-        delay(1000);
 
         // --- Read Vehicle Speed (ODBII PID 010D) ---
         String speedResponse = sendObdCommand("010D");
@@ -357,7 +355,6 @@ void loop()
             Serial.print("Failed to read speed: ");
             Serial.println(speedResponse);
         }
-        delay(1000);
 
         // --- Read Ambient Air Temperature (ODBII PID 0146) ---
         String ambientResponse = sendObdCommand("0146");
@@ -381,7 +378,7 @@ void loop()
         calculateFuelConsumption();
 
         updateDisplay();
-        delay(2000);
+        delay(500);
     }
     else
     {
