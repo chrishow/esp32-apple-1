@@ -113,18 +113,12 @@ void calculateFuelConsumption()
         if (fuelData.lastUpdateTime > 0)
         {
             float timeHours = (currentTime - fuelData.lastUpdateTime) / 3600000.0; // Convert ms to hours
+            float distanceKm = (currentSpeed * timeHours);                         // Distance in this interval
 
-            // Always add fuel consumed (even when idling)
             fuelData.totalFuelUsed += (fuelRate * timeHours);
+            fuelData.totalDistance += distanceKm;
 
-            // Only add distance if actually moving
-            if (currentSpeed > 0.1)
-            {
-                float distanceKm = (currentSpeed * timeHours);
-                fuelData.totalDistance += distanceKm;
-            }
-
-            // Calculate average consumption (only if we've traveled some distance)
+            // Calculate average consumption
             if (fuelData.totalDistance > 0.01)
             { // Avoid division by zero
                 fuelData.averageConsumption = (fuelData.totalFuelUsed * 100.0) / fuelData.totalDistance;
@@ -270,20 +264,36 @@ void setup()
     Serial.print("PIN set for authentication: ");
     Serial.println(pin);
 
-    // Connect to the ODBII adapter
-    if (!SerialBT.connect(deviceName))
+    // Keep trying to connect to the ODBII adapter
+    Serial.println("Attempting to connect to ODBII adapter...");
+    int connectionAttempts = 0;
+
+    while (!SerialBT.connected())
     {
-        Serial.println("Failed to connect to ODBII adapter by name. Retrying...");
+        connectionAttempts++;
+        Serial.print("Connection attempt ");
+        Serial.print(connectionAttempts);
+        Serial.print(" - Trying to connect to: ");
+        Serial.println(deviceName);
+
+        if (SerialBT.connect(deviceName))
+        {
+            delay(2000); // Give connection time to establish
+            if (SerialBT.connected())
+            {
+                Serial.println("Successfully connected to ODBII adapter!");
+                obdConnected = true;
+                break;
+            }
+        }
+
+        Serial.println("Connection failed. Retrying in 2 seconds...");
+        updateDisplay(); // Update display to show disconnected status
+        delay(2000);     // Wait 2 seconds before next attempt
     }
 
-    // A small delay to allow connection to establish
-    delay(2000);
-
-    if (SerialBT.connected())
+    if (obdConnected)
     {
-        Serial.println("Successfully connected to ODBII adapter!");
-        obdConnected = true;
-
         // Initialize fuel tracking
         fuelData.startTime = millis();
         fuelData.lastUpdateTime = 0;
@@ -304,14 +314,6 @@ void setup()
         delay(500);
 
         Serial.println("\nELM327 Initialized. Ready to read data.");
-    }
-    else
-    {
-        Serial.println("Could not establish Bluetooth connection. Check device name/address and power.");
-        while (true)
-        {
-            delay(100);
-        } // Halt for this example
     }
 }
 
@@ -405,16 +407,29 @@ void loop()
         obdConnected = false;
         updateDisplay();
         Serial.println("Bluetooth disconnected. Attempting to reconnect...");
-        if (!SerialBT.connect(deviceName))
+
+        if (SerialBT.connect(deviceName))
         {
-            Serial.println("Reconnection failed.");
-            delay(5000);
+            delay(2000); // Give connection time to establish
+            if (SerialBT.connected())
+            {
+                Serial.println("Reconnected to ODBII adapter!");
+                obdConnected = true;
+                updateDisplay();
+            }
+            else
+            {
+                Serial.println("Reconnection failed - connection not stable.");
+            }
         }
         else
         {
-            obdConnected = true;
-            updateDisplay();
+            Serial.println("Reconnection attempt failed.");
         }
-        delay(1000);
+
+        if (!obdConnected)
+        {
+            delay(2000); // Wait 2 seconds before next attempt
+        }
     }
 }
