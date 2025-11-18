@@ -8,6 +8,9 @@ static const int LINE_HEIGHT = 16; // Height of font 2
 static int currentRow = 0;
 static int currentCol = 0;
 
+// Buffer to store screen content for scrolling
+static char screenBuffer[DISPLAY_ROWS][DISPLAY_COLS + 1];
+
 void display_init()
 {
     tft.init();
@@ -25,6 +28,8 @@ void display_init()
 
     currentRow = 0;
     currentCol = 0;
+
+    display_clear();
 }
 
 void display_clear()
@@ -33,6 +38,53 @@ void display_clear()
     tft.setCursor(0, 0);
     currentRow = 0;
     currentCol = 0;
+
+    // Clear the screen buffer
+    for (int i = 0; i < DISPLAY_ROWS; i++)
+    {
+        for (int j = 0; j < DISPLAY_COLS; j++)
+        {
+            screenBuffer[i][j] = ' ';
+        }
+        screenBuffer[i][DISPLAY_COLS] = '\0';
+    }
+}
+
+static void scroll_screen()
+{
+    // Shift buffer contents up by one line
+    for (int i = 0; i < DISPLAY_ROWS - 1; i++)
+    {
+        for (int j = 0; j < DISPLAY_COLS; j++)
+        {
+            screenBuffer[i][j] = screenBuffer[i + 1][j];
+        }
+    }
+
+    // Clear the last line in buffer
+    for (int j = 0; j < DISPLAY_COLS; j++)
+    {
+        screenBuffer[DISPLAY_ROWS - 1][j] = ' ';
+    }
+
+    // Redraw the entire screen
+    tft.fillScreen(TFT_BLACK);
+    for (int i = 0; i < DISPLAY_ROWS; i++)
+    {
+        tft.setCursor(0, i * LINE_HEIGHT);
+        for (int j = 0; j < DISPLAY_COLS; j++)
+        {
+            if (screenBuffer[i][j] != '\0')
+            {
+                tft.print(screenBuffer[i][j]);
+            }
+        }
+    }
+
+    // Position cursor at start of last line
+    currentRow = DISPLAY_ROWS - 1;
+    currentCol = 0;
+    tft.setCursor(0, currentRow * LINE_HEIGHT);
 }
 
 void display_write_char(char c)
@@ -49,30 +101,45 @@ void display_write_char(char c)
         currentRow++;
         currentCol = 0;
 
-        // Check if we need to clear screen before wrapping
+        // Scroll if we're past the last row
         if (currentRow >= DISPLAY_ROWS)
         {
-            display_clear();
+            scroll_screen();
+        }
+        else
+        {
+            tft.setCursor(0, currentRow * LINE_HEIGHT);
         }
     }
-
-    // Print the character
-    tft.print(c);
 
     // Handle newline
     if (c == '\n')
     {
+        // Fill rest of current line with spaces in buffer
+        while (currentCol < DISPLAY_COLS)
+        {
+            screenBuffer[currentRow][currentCol] = ' ';
+            currentCol++;
+        }
+
         currentRow++;
         currentCol = 0;
 
-        // Clear screen when reaching max rows
+        // Scroll if we're past the last row
         if (currentRow >= DISPLAY_ROWS)
         {
-            display_clear();
+            scroll_screen();
+        }
+        else
+        {
+            tft.setCursor(0, currentRow * LINE_HEIGHT);
         }
     }
     else
     {
+        // Store character in buffer and print it
+        screenBuffer[currentRow][currentCol] = c;
+        tft.print(c);
         currentCol++;
     }
 }
