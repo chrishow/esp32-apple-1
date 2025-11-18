@@ -1,11 +1,14 @@
 #include <Arduino.h>
 #include "display.h"
+#include "emulator.h"
 
 void setup()
 {
     Serial.begin(115200);
 
     display_init();
+
+    reset_emulator();
 
     display_write_line("Serial Echo Ready");
     display_write_line("Type something...");
