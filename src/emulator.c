@@ -67,7 +67,10 @@ uint8_t read6502(uint16_t address)
 
     case KBDCR: // Keyboard control - just return status, don't clear strobe
     {
-        uint8_t status = kbd_data | (kbd_strobe ? 0x80 : 0x00);
+        // Return high bit set only if strobe is active
+        // This is critical: kbd_data might have bit 7 set, but we only
+        // want to indicate "key ready" when strobe is active
+        uint8_t status = kbd_strobe ? 0x80 : 0x00;
         return status;
     }
 

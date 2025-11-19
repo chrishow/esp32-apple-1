@@ -26,6 +26,12 @@ void loop()
     {
         char incomingChar = Serial.read();
 
+        // Map modern backspace to Apple-1 backspace
+        if (incomingChar == 0x08 || incomingChar == 0x7F)
+        {
+            incomingChar = 0xDF; // Apple-1 backspace
+        }
+
         // Queue key for emulator
         emulator_queue_key(incomingChar);
     }
