@@ -91,13 +91,30 @@ static void scroll_screen()
 
 void display_write_char(char c)
 {
+    static int nl_count = 0;
+
     // Convert CR to newline for both serial and display
     if (c == '\r')
     {
         c = '\n';
     }
 
-    // Echo to serial port (after conversion)
+    // Count consecutive newlines, but only suppress 3rd+ newline
+    // This allows: command[NL][NL]output[NL] but suppresses extra [NL][NL]
+    if (c == '\n')
+    {
+        nl_count++;
+        if (nl_count > 2)
+        {
+            return; // Suppress 3rd and beyond consecutive newlines
+        }
+    }
+    else
+    {
+        nl_count = 0;
+    }
+
+    // Echo to serial port
     Serial.write(c);
 
     // Check if we need to wrap to next line (auto word wrap)
@@ -186,7 +203,7 @@ void display_update_cursor()
         {
             // Erase cursor by filling with background color
             tft.fillRect(x, y, 12, LINE_HEIGHT, TFT_BLACK);
-            
+
             // Redraw the character that's in the buffer (if any)
             char ch = (currentCol < DISPLAY_COLS) ? screenBuffer[currentRow][currentCol] : ' ';
             if (ch != ' ')
