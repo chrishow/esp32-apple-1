@@ -7,6 +7,8 @@ TFT_eSPI tft = TFT_eSPI();
 static const int LINE_HEIGHT = 16; // Height of font 2
 static int currentRow = 0;
 static int currentCol = 0;
+static unsigned long lastCursorBlink = 0;
+static bool cursorVisible = true;
 
 // Buffer to store screen content for scrolling
 static char screenBuffer[DISPLAY_ROWS][DISPLAY_COLS + 1];
@@ -159,4 +161,42 @@ void display_write_line(const char *str)
 {
     display_write(str);
     display_write_char('\n');
+}
+
+void display_update_cursor()
+{
+    unsigned long now = millis();
+
+    // Blink cursor at 2Hz (toggle every 500ms)
+    if (now - lastCursorBlink >= 500)
+    {
+        lastCursorBlink = now;
+        cursorVisible = !cursorVisible;
+
+        // Draw or erase cursor at current position
+        int x = currentCol * 12; // Font 2 is 12 pixels wide
+        int y = currentRow * LINE_HEIGHT;
+
+        if (cursorVisible)
+        {
+            tft.setCursor(x, y);
+            tft.print('@');
+        }
+        else
+        {
+            // Erase cursor by filling with background color
+            tft.fillRect(x, y, 12, LINE_HEIGHT, TFT_BLACK);
+            
+            // Redraw the character that's in the buffer (if any)
+            char ch = (currentCol < DISPLAY_COLS) ? screenBuffer[currentRow][currentCol] : ' ';
+            if (ch != ' ')
+            {
+                tft.setCursor(x, y);
+                tft.print(ch);
+            }
+        }
+
+        // Restore cursor position
+        tft.setCursor(x, y);
+    }
 }

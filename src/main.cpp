@@ -36,6 +36,9 @@ void loop()
         step_emulator();
     }
 
+    // Update the blinking cursor
+    display_update_cursor();
+
     // Small delay to prevent watchdog issues
     delay(1);
 }

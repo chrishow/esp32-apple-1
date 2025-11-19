@@ -25,6 +25,9 @@ extern "C"
     // Clear the display and reset cursor position
     void display_clear();
 
+    // Update the blinking cursor (call from main loop)
+    void display_update_cursor();
+
 #ifdef __cplusplus
 }
 #endif
