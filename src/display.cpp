@@ -70,17 +70,13 @@ static void scroll_screen()
         screenBuffer[DISPLAY_ROWS - 1][j] = ' ';
     }
 
-    // Redraw the entire screen
-    tft.fillScreen(TFT_BLACK);
+    // Redraw all lines - text background color handles clearing automatically
     for (int i = 0; i < DISPLAY_ROWS; i++)
     {
         tft.setCursor(0, i * LINE_HEIGHT);
         for (int j = 0; j < DISPLAY_COLS; j++)
         {
-            if (screenBuffer[i][j] != '\0')
-            {
-                tft.print(screenBuffer[i][j]);
-            }
+            tft.print(screenBuffer[i][j]);
         }
     }
 

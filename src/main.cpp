@@ -52,7 +52,7 @@ void loop()
     }
 
     // Run CPU instructions (multiple per loop for better performance)
-    for (int i = 0; i < 1000; i++)
+    // for (int i = 0; i < 100; i++)
     {
         step_emulator();
     }
@@ -61,5 +61,5 @@ void loop()
     display_update_cursor();
 
     // Small delay to prevent watchdog issues
-    delay(1);
+    delay(2);
 }
