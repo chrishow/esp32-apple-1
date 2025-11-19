@@ -26,6 +26,21 @@ void loop()
     {
         char incomingChar = Serial.read();
 
+        // Handle special control key combinations
+        if (incomingChar == 0x12) // Ctrl+R (0x12 = DC2)
+        {
+            Serial.println("\n[RESET]");
+            display_clear();
+            reset_emulator();
+            return;
+        }
+        else if (incomingChar == 0x0C) // Ctrl+L (0x0C = Form Feed)
+        {
+            Serial.println("\n[CLEAR SCREEN]");
+            display_clear();
+            return;
+        }
+
         // Map modern backspace to Apple-1 backspace
         if (incomingChar == 0x08 || incomingChar == 0x7F)
         {
