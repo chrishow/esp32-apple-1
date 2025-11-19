@@ -8,12 +8,15 @@ void setup()
 
     display_init();
 
+    display_write_line("Apple-1 Emulator");
+    display_write_line("Loading Wozmon...");
+
+    Serial.println("Apple-1 Emulator");
+    Serial.println("Loading Wozmon...");
+
     reset_emulator();
 
-    display_write_line("Serial Echo Ready");
-    display_write_line("Type something...");
-
-    Serial.println("Serial Echo Ready - Type something!");
+    Serial.println("Ready");
 }
 
 void loop()
@@ -23,10 +26,16 @@ void loop()
     {
         char incomingChar = Serial.read();
 
-        // Echo back to serial
-        Serial.print(incomingChar);
-
-        // Display on screen
-        display_write_char(incomingChar);
+        // Queue key for emulator
+        emulator_queue_key(incomingChar);
     }
+
+    // Run CPU instructions (multiple per loop for better performance)
+    for (int i = 0; i < 1000; i++)
+    {
+        step_emulator();
+    }
+
+    // Small delay to prevent watchdog issues
+    delay(1);
 }

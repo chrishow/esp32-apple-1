@@ -89,11 +89,14 @@ static void scroll_screen()
 
 void display_write_char(char c)
 {
-    // Skip carriage return to avoid double newlines
+    // Convert CR to newline for both serial and display
     if (c == '\r')
     {
-        return;
+        c = '\n';
     }
+
+    // Echo to serial port (after conversion)
+    Serial.write(c);
 
     // Check if we need to wrap to next line (auto word wrap)
     if (c != '\n' && currentCol >= DISPLAY_COLS)
