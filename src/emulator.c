@@ -2,6 +2,7 @@
 #include "display.h"
 #include "wozmon_rom.h"
 #include "basic_rom.h"
+#include "cellular_rom.h"
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -13,6 +14,7 @@
 #define DSPCR 0xD013 // Display control register
 
 #define RAM_SIZE 0x2000     // 8KB RAM (0x0000-0x1FFF)
+#define CELLULAR_START 0x0300 // Cellular program loads at $0300
 #define BASIC_START 0xE000  // BASIC loads at $E000
 #define ROM_START 0xFF00    // ROM starts at 0xFF00
 #define ROM_SIZE 256        // 256 bytes
@@ -140,6 +142,12 @@ void setup_emulator()
     printf("Apple-1 BASIC loaded at $E000 (%u bytes)\n", basic_size);
     printf("To run BASIC, type: E000R\n");
     
+    // Load Cellular Automaton program at $0300
+    memcpy(&memory[CELLULAR_START], cellular_rom, cellular_rom_len);
+    
+    printf("Cellular Automaton loaded at $0300 (%u bytes)\n", cellular_rom_len);
+    printf("To run Cellular, type: 300R\n");
+    
     // Dump ROM sections for debugging
     printf("ROM $FF00-$FF0F: ");
     for (int i = 0; i < 16; i++) {
@@ -158,12 +166,12 @@ void setup_emulator()
            memory[RESET_VECTOR+1], memory[RESET_VECTOR],
            memory[RESET_VECTOR+1], memory[RESET_VECTOR]);
     
-    // If reset vector is invalid (0xFFFF), set it to ROM_START
-    if (memory[RESET_VECTOR] == 0xFF && memory[RESET_VECTOR+1] == 0xFF)
+    // Always ensure reset vector points to ROM_START
+    if (memory[RESET_VECTOR] != 0x00 || memory[RESET_VECTOR+1] != 0xFF)
     {
+        printf("Reset vector incorrect, fixing to point to $FF00\n");
         memory[RESET_VECTOR] = 0x00;     // Low byte
         memory[RESET_VECTOR + 1] = 0xFF; // High byte  
-        printf("Fixed reset vector to point to $FF00\n");
     }
 
     // Initialize keyboard
