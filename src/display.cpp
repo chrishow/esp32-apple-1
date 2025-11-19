@@ -94,6 +94,16 @@ void display_write_char(char c)
 {
     static int nl_count = 0;
 
+    // Erase cursor if it's currently visible
+    if (cursorVisible)
+    {
+        const int charWidth = 6;
+        int cursor_x = currentCol * charWidth;
+        int cursor_y = currentRow * LINE_HEIGHT;
+        tft.fillRect(cursor_x, cursor_y, charWidth, LINE_HEIGHT, TFT_BLACK);
+        cursorVisible = false;
+    }
+
     // Suppress DEL (0x7F) and other control characters except CR and LF
     if (c == 0x7F || (c < 0x20 && c != '\r' && c != '\n'))
     {
