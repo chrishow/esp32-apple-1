@@ -1,8 +1,8 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-#define DISPLAY_COLS 30
-#define DISPLAY_ROWS 8
+#define DISPLAY_COLS 40
+#define DISPLAY_ROWS 17
 
 #ifdef __cplusplus
 extern "C"

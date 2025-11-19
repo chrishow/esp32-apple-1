@@ -4,11 +4,11 @@
 
 TFT_eSPI tft = TFT_eSPI();
 
-static const int LINE_HEIGHT = 16; // Height of font 2
+static const int LINE_HEIGHT = 8; // Height of font 1 at size 1
 static int currentRow = 0;
 static int currentCol = 0;
 static unsigned long lastCursorBlink = 0;
-static bool cursorVisible = true;
+static bool cursorVisible = false;
 
 // Buffer to store screen content for scrolling
 static char screenBuffer[DISPLAY_ROWS][DISPLAY_COLS + 1];
@@ -25,7 +25,8 @@ void display_init()
 
     // Setup text display
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
-    tft.setTextFont(2);
+    tft.setTextFont(1); // Font 1 is monospace (6x8 pixels)
+    tft.setTextSize(1); // Use base size for smaller text
     tft.setCursor(0, 0);
 
     currentRow = 0;
@@ -93,13 +94,17 @@ void display_write_char(char c)
 {
     static int nl_count = 0;
 
+    // Suppress DEL (0x7F) and other control characters except CR and LF
+    if (c == 0x7F || (c < 0x20 && c != '\r' && c != '\n'))
+    {
+        return;
+    }
+
     // Convert CR to newline for both serial and display
     if (c == '\r')
     {
         c = '\n';
-    }
-
-    // Count consecutive newlines, but only suppress 3rd+ newline
+    } // Count consecutive newlines, but only suppress 3rd+ newline
     // This allows: command[NL][NL]output[NL] but suppresses extra [NL][NL]
     if (c == '\n')
     {
@@ -182,16 +187,16 @@ void display_write_line(const char *str)
 
 void display_update_cursor()
 {
-    unsigned long now = millis();
+    unsigned long currentTime = millis();
 
-    // Blink cursor at 2Hz (toggle every 500ms)
-    if (now - lastCursorBlink >= 500)
+    // Blink cursor every 500ms
+    if (currentTime - lastCursorBlink >= 500)
     {
-        lastCursorBlink = now;
+        lastCursorBlink = currentTime;
         cursorVisible = !cursorVisible;
 
-        // Draw or erase cursor at current position
-        int x = currentCol * 12; // Font 2 is 12 pixels wide
+        const int charWidth = 6; // Font 1 is fixed 6 pixels wide
+        int x = currentCol * charWidth;
         int y = currentRow * LINE_HEIGHT;
 
         if (cursorVisible)
@@ -201,19 +206,10 @@ void display_update_cursor()
         }
         else
         {
-            // Erase cursor by filling with background color
-            tft.fillRect(x, y, 12, LINE_HEIGHT, TFT_BLACK);
-
-            // Redraw the character that's in the buffer (if any)
-            char ch = (currentCol < DISPLAY_COLS) ? screenBuffer[currentRow][currentCol] : ' ';
-            if (ch != ' ')
-            {
-                tft.setCursor(x, y);
-                tft.print(ch);
-            }
+            tft.fillRect(x, y, charWidth, LINE_HEIGHT, TFT_BLACK);
         }
 
-        // Restore cursor position
-        tft.setCursor(x, y);
+        // Always restore TFT cursor to current write position
+        tft.setCursor(currentCol * charWidth, currentRow * LINE_HEIGHT);
     }
 }

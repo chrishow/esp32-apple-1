@@ -8,8 +8,8 @@ void setup()
 
     display_init();
 
-    display_write_line("Apple-1 Emulator");
-    display_write_line("Loading Wozmon...");
+    // display_write_line("Apple-1 Emulator");
+    // display_write_line("Loading Wozmon...");
 
     Serial.println("Apple-1 Emulator");
     Serial.println("Loading Wozmon...");
