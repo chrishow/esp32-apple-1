@@ -1,6 +1,7 @@
 #include "emulator.h"
 #include "display.h"
 #include "wozmon_rom.h"
+#include "basic_rom.h"
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -12,6 +13,7 @@
 #define DSPCR 0xD013 // Display control register
 
 #define RAM_SIZE 0x2000     // 8KB RAM (0x0000-0x1FFF)
+#define BASIC_START 0xE000  // BASIC loads at $E000
 #define ROM_START 0xFF00    // ROM starts at 0xFF00
 #define ROM_SIZE 256        // 256 bytes
 #define RESET_VECTOR 0xFFFC // Reset vector location
@@ -26,13 +28,6 @@ static char last_char = 0; // To prevent duplicate chars
 // Queue a character from keyboard (serial input)
 void emulator_queue_key(char c)
 {
-    // Ignore duplicate characters (happens when terminal sends both \r and \n)
-    if (c == last_char && (c == '\r' || c == '\n'))
-    {
-        return;
-    }
-    last_char = c;
-    
     // Convert lowercase to uppercase (Apple-1 style)
     if (c >= 'a' && c <= 'z')
     {
@@ -44,6 +39,13 @@ void emulator_queue_key(char c)
     {
         c = '\r'; // 0x0D
     }
+
+    // Ignore duplicate CR characters (happens when terminal sends both \r and \n)
+    if (c == '\r' && last_char == '\r')
+    {
+        return;
+    }
+    last_char = c;
 
     // Store character and set strobe
     kbd_data = c;
@@ -62,6 +64,7 @@ uint8_t read6502(uint16_t address)
     {
         uint8_t value = kbd_data | (kbd_strobe ? 0x80 : 0x00);
         kbd_strobe = 0; // Clear strobe after reading KBD
+        kbd_data = 0;   // Clear data to prevent re-reading stale characters
         return value;
     }
 
@@ -129,6 +132,13 @@ void setup_emulator()
     memcpy(&memory[ROM_START], wozmon_rom, copy_size);
     
     printf("Wozmon loaded from embedded ROM (%u bytes)\n", copy_size);
+    
+    // Load Apple-1 BASIC into RAM at $E000
+    size_t basic_size = (basic_rom_len < 4096) ? basic_rom_len : 4096;
+    memcpy(&memory[BASIC_START], basic_rom, basic_size);
+    
+    printf("Apple-1 BASIC loaded at $E000 (%u bytes)\n", basic_size);
+    printf("To run BASIC, type: E000R\n");
     
     // Dump ROM sections for debugging
     printf("ROM $FF00-$FF0F: ");
