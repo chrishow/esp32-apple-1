@@ -26,3 +26,8 @@ Stored at 0xE000, run with `E000R`
 Stored at 0x0300  
 Run with `300R` 
 A good setting is: INITIAL: 1, RADIUS: 2, RULE: 15
+
+### More software
+More software can be found here: https://apple1software.com/
+
+Software from this site can be directly uploaded to the device with the 'serial' feature. 
