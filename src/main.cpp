@@ -4,7 +4,7 @@
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(57600);
 
     display_init();
 
@@ -52,7 +52,7 @@ void loop()
     }
 
     // Run CPU instructions (multiple per loop for better performance)
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 200; i++)
     {
         step_emulator();
     }
